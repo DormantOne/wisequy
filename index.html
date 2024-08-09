@@ -17,7 +17,7 @@
 
         .qr-item canvas {
             margin-bottom: 10px;
-            width: 150px;
+            width: 150px; /* Adjust the size of the QR code */
             height: 150px;
         }
 
@@ -124,7 +124,11 @@
             qrCodeContainer.appendChild(qrCanvas);
 
             QRCode.toCanvas(qrCanvas, url, { width: 150, height: 150 }, function (error) {
-                if (error) console.error(error);
+                if (error) {
+                    console.error("Error generating QR code:", error);
+                } else {
+                    console.log("QR code generated successfully.");
+                }
             });
 
             const qrInfoColors = document.createElement("p");
@@ -160,10 +164,11 @@
             const printCanvas = document.createElement("canvas");
             printCanvas.width = qrCanvas.width;
             printCanvas.height = qrCanvas.height;
-            printItem.appendChild(printCanvas);
 
             const printCtx = printCanvas.getContext("2d");
             printCtx.drawImage(qrCanvas, 0, 0);
+
+            printItem.appendChild(printCanvas);
 
             const printInfoColors = document.createElement("p");
             printInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
@@ -173,10 +178,18 @@
             printInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
             printItem.appendChild(printInfoTrees);
 
+            if (!printCanvas || !printInfoColors || !printInfoTrees) {
+                console.error("Error: Some print elements were not properly created.");
+            } else {
+                console.log("Print elements added successfully.");
+            }
+
             printableContainer.appendChild(printItem);
+            console.log("Added to printable area:", qrData);
         }
 
         document.getElementById("printBtn").addEventListener("click", function() {
+            console.log("Print button clicked. Preparing to print...");
             window.print();
         });
     </script>
