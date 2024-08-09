@@ -111,8 +111,13 @@
                             const email = document.getElementById("emailInput").value;
                             const timestamp = new Date().toISOString();
 
-                            if (!note || !email) {
-                                alert("Please fill in all fields.");
+                            if (!note.trim()) {
+                                alert("Please enter a note before saving.");
+                                return;
+                            }
+
+                            if (!email) {
+                                alert("Please enter your email before saving.");
                                 return;
                             }
 
@@ -124,6 +129,7 @@
                                     timestamp: timestamp
                                 });
                                 document.getElementById("saveMessage").style.display = "inline"; // Show success message
+                                document.getElementById("noteInput").value = ""; // Clear the note input after saving
                                 loadNotes(); // Reload notes after saving
                             } catch (e) {
                                 console.error("Error saving note:", e);
@@ -143,7 +149,8 @@
                                 const noteElement = document.createElement("div");
                                 noteElement.classList.add("note");
                                 noteElement.innerHTML = `
-                                    <p><strong>${data.email}:</strong> ${data.note}</p>
+                                    <p>${data.note}</p>
+                                    <p><a href="mailto:${data.email}">${data.email}</a></p>
                                     <p><em>${new Date(data.timestamp).toLocaleString()}</em></p>
                                 `;
                                 notesList.appendChild(noteElement);
