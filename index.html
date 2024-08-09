@@ -126,12 +126,14 @@
             const qrString = encodeURIComponent(JSON.stringify(qrData));
             const targetUrl = `https://dormantone.github.io/wisequy/clipboard.html?data=${qrString}`;
 
-            generateQRCode(targetUrl, qrData);
+            setTimeout(() => {
+                generateQRCode(targetUrl, qrData);
 
-            if (qrCodes.length + 1 >= maxQRCodes) {
-                console.log("Max QR codes limit reached, disabling generate button.");
-                disableGenerateButton();
-            }
+                if (qrCodes.length + 1 >= maxQRCodes) {
+                    console.log("Max QR codes limit reached, disabling generate button.");
+                    disableGenerateButton();
+                }
+            }, 100); // Introducing a small delay between adding QR codes
         });
 
         function generateUniqueId() {
@@ -237,6 +239,11 @@
 
             printableContainer.appendChild(printItem);
             console.log(`Added to printable area. Container height: ${printableContainer.scrollHeight}px`);
+
+            // Force a layout recalculation
+            printableContainer.style.display = 'block';
+            printableContainer.offsetHeight; // Trigger reflow
+            printableContainer.style.display = '';
         }
 
         function disableGenerateButton() {
