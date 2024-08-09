@@ -95,13 +95,14 @@
     <h1>WiseQuy - QR Code Generator</h1>
     <button id="generateBtn">Generate QR Code</button>
     <div class="qr-list" id="qrList"></div>
+    <p id="limitMessage" style="color: red; display: none;">Limit reached: You can generate up to 6 QR codes.</p>
     <button id="printBtn">Print All QR Codes</button>
 
     <div class="printable" id="printableContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
-        const maxQRCodes = 9;
+        const maxQRCodes = 6;
         let qrCodes = [];
         const usedColors = new Set();
         const usedTrees = new Set();
@@ -126,14 +127,12 @@
             const qrString = encodeURIComponent(JSON.stringify(qrData));
             const targetUrl = `https://dormantone.github.io/wisequy/clipboard.html?data=${qrString}`;
 
-            setTimeout(() => {
-                generateQRCode(targetUrl, qrData);
+            generateQRCode(targetUrl, qrData);
 
-                if (qrCodes.length + 1 >= maxQRCodes) {
-                    console.log("Max QR codes limit reached, disabling generate button.");
-                    disableGenerateButton();
-                }
-            }, 100); // Introducing a small delay between adding QR codes
+            if (qrCodes.length + 1 >= maxQRCodes) {
+                console.log("Max QR codes limit reached, disabling generate button.");
+                disableGenerateButton();
+            }
         });
 
         function generateUniqueId() {
@@ -239,17 +238,13 @@
 
             printableContainer.appendChild(printItem);
             console.log(`Added to printable area. Container height: ${printableContainer.scrollHeight}px`);
-
-            // Force a layout recalculation
-            printableContainer.style.display = 'block';
-            printableContainer.offsetHeight; // Trigger reflow
-            printableContainer.style.display = '';
         }
 
         function disableGenerateButton() {
             const generateBtn = document.getElementById("generateBtn");
             generateBtn.disabled = true;
-            generateBtn.textContent = "Limit reached (9 QR codes)";
+            generateBtn.textContent = "Limit reached (6 QR codes)";
+            document.getElementById("limitMessage").style.display = "block";
         }
 
         function enableGenerateButton() {
@@ -257,6 +252,7 @@
                 const generateBtn = document.getElementById("generateBtn");
                 generateBtn.disabled = false;
                 generateBtn.textContent = "Generate QR Code";
+                document.getElementById("limitMessage").style.display = "none";
             }
         }
 
