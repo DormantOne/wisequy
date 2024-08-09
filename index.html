@@ -83,6 +83,12 @@
                 border-right: none;
             }
         }
+
+        button[disabled] {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -95,11 +101,16 @@
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
+        const maxQRCodes = 9;
         let qrCodes = [];
         const usedColors = new Set();
         const usedTrees = new Set();
 
         document.getElementById("generateBtn").addEventListener("click", function() {
+            if (qrCodes.length >= maxQRCodes) {
+                return;
+            }
+
             const uniqueId = generateUniqueId();
             const colors = generateUniqueColors();
             const trees = generateUniqueTrees();
@@ -114,6 +125,10 @@
             const targetUrl = `https://dormantone.github.io/wisequy/clipboard.html?data=${qrString}`;
 
             generateQRCode(targetUrl, qrData);
+
+            if (qrCodes.length + 1 >= maxQRCodes) {
+                disableGenerateButton();
+            }
         });
 
         function generateUniqueId() {
@@ -183,6 +198,7 @@
                 qrCodes = qrCodes.filter(item => item !== qrData);
                 usedColors.delete(...qrData.colors);
                 usedTrees.delete(...qrData.trees);
+                enableGenerateButton();
             });
             qrCodeContainer.appendChild(deleteBtn);
 
@@ -214,6 +230,20 @@
 
             printableContainer.appendChild(printItem);
             console.log("Added to printable area:", qrData);
+        }
+
+        function disableGenerateButton() {
+            const generateBtn = document.getElementById("generateBtn");
+            generateBtn.disabled = true;
+            generateBtn.textContent = "Limit reached (9 QR codes)";
+        }
+
+        function enableGenerateButton() {
+            if (qrCodes.length < maxQRCodes) {
+                const generateBtn = document.getElementById("generateBtn");
+                generateBtn.disabled = false;
+                generateBtn.textContent = "Generate QR Code";
+            }
         }
 
         document.getElementById("printBtn").addEventListener("click", function() {
