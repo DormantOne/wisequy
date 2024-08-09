@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiseQuy - QR Code Generator</title>
+</head>
+<body>
+    <h1>WiseQuy - QR Code Generator</h1>
+    <button id="generateBtn">Generate QR Code</button>
+    <div id="qrCodeContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script>
+        document.getElementById("generateBtn").addEventListener("click", function() {
+            const uniqueId = generateUniqueId();
+            const colors = generateUniqueColors();
+            const trees = generateUniqueTrees();
+
+            const qrData = {
+                id: uniqueId,
+                colors: colors,
+                trees: trees
+            };
+
+            const qrString = encodeURIComponent(JSON.stringify(qrData));
+            const targetUrl = `https://yourgithubusername.github.io/yourprojectname/qrdecoder.html?data=${qrString}`;
+
+            generateQRCode(targetUrl);
+        });
+
+        function generateUniqueId() {
+            return Math.random().toString(36).substring(2, 10);
+        }
+
+        function generateUniqueColors() {
+            const colors = ["red", "green", "blue", "yellow", "purple", "orange"];
+            return colors.sort(() => 0.5 - Math.random()).slice(0, 3);
+        }
+
+        function generateUniqueTrees() {
+            const trees = ["oak", "pine", "maple", "birch", "willow", "cedar"];
+            return trees.sort(() => 0.5 - Math.random()).slice(0, 3);
+        }
+
+        function generateQRCode(url) {
+            const qrCodeContainer = document.getElementById("qrCodeContainer");
+            qrCodeContainer.innerHTML = ""; // Clear previous QR code
+
+            QRCode.toCanvas(document.createElement("canvas"), url, function (error, canvas) {
+                if (error) console.error(error);
+                qrCodeContainer.appendChild(canvas);
+            });
+        }
+    </script>
+</body>
+</html>
