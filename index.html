@@ -5,9 +5,9 @@
     <title>WiseQuy - QR Code Generator</title>
     <style>
         .qr-item {
-            margin: 10px 0;
+            margin: 20px 0;
             border: 1px solid #ccc;
-            padding: 10px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -27,46 +27,19 @@
 
         .qr-list {
             margin-top: 20px;
-        }
-
-        .printable {
             display: flex;
             flex-wrap: wrap;
-            justify-content: flex-start;
-            margin-top: 20px;
-        }
-
-        .printable .print-item {
-            display: inline-block;
-            width: 30%;
-            text-align: center;
-            margin: 5px;
-            padding: 10px;
-            border: 1px dotted #000;
-            box-sizing: border-box;
-            vertical-align: top;
-        }
-
-        .printable .print-item img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-        }
-
-        .printable .print-item p {
-            margin: 5px 0;
-            text-align: center;
+            gap: 20px;
         }
 
         @media print {
             body * {
                 visibility: hidden;
             }
-            .printable, .printable * {
+            .qr-list, .qr-list * {
                 visibility: visible;
             }
-            .printable {
+            .qr-list {
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -79,171 +52,247 @@
             color: #666;
             cursor: not-allowed;
         }
+
+        #saveMessage {
+            color: green;
+            margin-top: 10px;
+            display: none;
+        }
+
+        #printWarning {
+            color: red;
+            margin-left: 10px;
+        }
+
+        #resetBtn {
+            margin-top: 20px;
+            background-color: red;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <h1>WiseQuy - QR Code Generator</h1>
     <button id="generateBtn">Generate QR Code</button>
-    <div class="qr-list" id="qrList"></div>
+    <button id="saveBtn">Save All QR Codes</button>
+    <span id="saveMessage">QR codes saved successfully!</span>
     <p id="limitMessage" style="color: red; display: none;">Limit reached: You can generate up to 7 QR codes.</p>
-    <button id="printBtn">Print All QR Codes</button>
+    <button id="printBtn" disabled>Print All QR Codes</button>
+    <span id="printWarning">Must save before printing</span>
+    <button id="resetBtn">Reset</button>
 
-    <div class="printable" id="printableContainer"></div>
+    <div class="qr-list" id="qrList"></div>
 
+    <!-- Include CryptoJS library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+    <!-- Include QRCode library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-    <script>
-        const maxQRCodes = 7;
-        let qrCodes = [];
-        const usedColors = new Set();
-        const usedTrees = new Set();
 
-        document.getElementById("generateBtn").addEventListener("click", function() {
-            if (qrCodes.length >= maxQRCodes) {
-                return;
+    <script type="module">
+        // Function to decrypt the API key using the password
+        function decryptApiKey(encryptedKey, password) {
+            const key = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex).slice(0, 32);
+            const bytes = CryptoJS.AES.decrypt(encryptedKey, key);
+            const decryptedKey = bytes.toString(CryptoJS.enc.Utf8);
+            return decryptedKey;
+        }
+
+        // Encrypted Firebase API Key
+        const encryptedApiKey = "U2FsdGVkX1/io1prW8SV0Qh0XUWCuYqVsU5ufc+AlWmhF6JNwFIGtDMs2sA1oGAiUREWqioKSSTg39jGFHJOdg=="; // Your encrypted key
+
+        // Ask the user for the password to activate Firebase
+        const password = prompt("Enter the password to activate Firebase:");
+
+        if (password === "suncat") {
+            const decryptedApiKey = decryptApiKey(encryptedApiKey, password);
+
+            if (decryptedApiKey) {
+                // Dynamically import Firebase modules after decryption
+                import("https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js").then(({ initializeApp }) => {
+                    import("https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore.js").then(({ getFirestore, collection, addDoc, query, where, getDocs }) => {
+                        const firebaseConfig = {
+                            apiKey: decryptedApiKey,
+                            authDomain: "wisequy-35db5.firebaseapp.com",
+                            projectId: "wisequy-35db5",
+                            storageBucket: "wisequy-35db5.appspot.com",
+                            messagingSenderId: "37433532573",
+                            appId: "1:37433532573:web:0b63269d0d4f9728d1f474",
+                            measurementId: "G-8KKCPRFL8B"
+                        };
+
+                        // Initialize Firebase
+                        const app = initializeApp(firebaseConfig);
+                        const db = getFirestore(app);
+
+                        // Function to save QR code data to Firestore
+                        async function saveQRCodeData(qrData) {
+                            try {
+                                const timestamp = new Date().toISOString();
+
+                                // Check for existing combination of colors and trees
+                                const q = query(collection(db, "qrCodes"),
+                                    where("colors", "==", qrData.colors),
+                                    where("trees", "==", qrData.trees));
+                                const querySnapshot = await getDocs(q);
+
+                                if (!querySnapshot.empty) {
+                                    console.log("Duplicate combination found. QR code not saved.");
+                                    alert("A QR code with this combination of colors and trees already exists.");
+                                } else {
+                                    const docRef = await addDoc(collection(db, "qrCodes"), {
+                                        uniqueId: qrData.id,
+                                        colors: qrData.colors,
+                                        trees: qrData.trees,
+                                        createdAt: timestamp
+                                    });
+                                    console.log("QR Code data saved with ID: ", docRef.id);
+                                }
+                            } catch (e) {
+                                console.error("Error adding document: ", e);
+                            }
+                        }
+
+                        // Save button functionality
+                        document.getElementById("saveBtn").addEventListener("click", function () {
+                            console.log("Save button clicked.");
+                            qrCodes.forEach(qrData => {
+                                saveQRCodeData(qrData.qrData); // Save each QR code's data to Firestore
+                            });
+                            document.getElementById("saveMessage").style.display = "inline"; // Show save message
+                            enablePrintButton(); // Enable the print button after saving
+                        });
+
+                        // Print button functionality (prints the entire page)
+                        document.getElementById("printBtn").addEventListener("click", function () {
+                            console.log("Print button clicked. Preparing to print...");
+                            window.print();
+                        });
+
+                        // QR code generation logic
+                        const maxQRCodes = 7;
+                        let qrCodes = [];
+                        const usedColors = new Set();
+                        const usedTrees = new Set();
+
+                        document.getElementById("generateBtn").addEventListener("click", function() {
+                            if (qrCodes.length >= maxQRCodes) {
+                                return;
+                            }
+
+                            const uniqueId = generateUniqueId();
+                            const colors = generateUniqueColors();
+                            const trees = generateUniqueTrees();
+
+                            const qrData = {
+                                id: uniqueId,
+                                colors: colors,
+                                trees: trees
+                            };
+
+                            const qrString = encodeURIComponent(JSON.stringify(qrData));
+                            const targetUrl = `https://dormantone.github.io/wisequy/clipboard.html?data=${qrString}`;
+
+                            generateQRCode(targetUrl, qrData);
+
+                            if (qrCodes.length + 1 >= maxQRCodes) {
+                                disableGenerateButton();
+                            }
+                        });
+
+                        function generateUniqueId() {
+                            const timestamp = Date.now().toString(36);
+                            const randomPart = Math.random().toString(36).substring(2, 8);
+                            return `${timestamp}${randomPart}`.toUpperCase();
+                        }
+
+                        function generateUniqueColors() {
+                            const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "black", "white",
+                                "gray", "cyan", "magenta", "lime", "maroon", "navy", "olive", "teal", "silver", "gold"];
+
+                            const selectedColors = [];
+                            while (selectedColors.length < 3) {
+                                const color = colors[Math.floor(Math.random() * colors.length)];
+                                if (!usedColors.has(color)) {
+                                    selectedColors.push(color);
+                                    usedColors.add(color);
+                                }
+                            }
+                            return selectedColors;
+                        }
+
+                        function generateUniqueTrees() {
+                            const trees = ["oak", "pine", "maple", "birch", "willow", "cedar", "spruce", "fir", "ash", "elm",
+                                "cherry", "apple", "peach", "pear", "plum", "walnut", "hickory", "cypress", "juniper", "sycamore"];
+
+                            const selectedTrees = [];
+                            while (selectedTrees.length < 3) {
+                                const tree = trees[Math.floor(Math.random() * trees.length)];
+                                if (!usedTrees.has(tree)) {
+                                    selectedTrees.push(tree);
+                                    usedTrees.add(tree);
+                                }
+                            }
+                            return selectedTrees;
+                        }
+
+                        function generateQRCode(url, qrData) {
+                            const qrCodeContainer = document.createElement("div");
+                            qrCodeContainer.classList.add("qr-item");
+
+                            const qrCanvas = document.createElement("canvas");
+                            qrCodeContainer.appendChild(qrCanvas);
+
+                            QRCode.toCanvas(qrCanvas, url, { width: 150, height: 150 }, function (error) {
+                                if (error) {
+                                    console.error("Error generating QR code:", error);
+                                } else {
+                                    qrCodes.push({ qrData, qrCanvas, qrCodeContainer });
+                                    qrCodeContainer.setAttribute("data-id", qrData.id); // Store the ID for reference
+                                    document.getElementById("qrList").appendChild(qrCodeContainer);
+                                }
+                            });
+
+                            const qrInfoColors = document.createElement("p");
+                            qrInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
+                            qrCodeContainer.appendChild(qrInfoColors);
+
+                            const qrInfoTrees = document.createElement("p");
+                            qrInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
+                            qrCodeContainer.appendChild(qrInfoTrees);
+                        }
+
+                        function disableGenerateButton() {
+                            const generateBtn = document.getElementById("generateBtn");
+                            generateBtn.disabled = true;
+                            generateBtn.textContent = "Limit reached (7 QR codes)";
+                            document.getElementById("limitMessage").style.display = "block";
+                        }
+
+                        function enablePrintButton() {
+                            const printBtn = document.getElementById("printBtn");
+                            printBtn.disabled = false;
+                            printBtn.style.backgroundColor = ""; // Reset button style
+                            printBtn.style.color = ""; // Reset button style
+                            document.getElementById("printWarning").style.display = "none"; // Hide warning
+                        }
+
+                        // Manual reset button to clear the page and reload
+                        document.getElementById("resetBtn").addEventListener("click", function() {
+                            if (confirm("This will clear all QR codes and reset the page. Are you sure?")) {
+                                location.reload();
+                            }
+                        });
+                    });
+                });
+            } else {
+                alert("Failed to initialize Firebase. Incorrect decryption.");
             }
-
-            const uniqueId = generateUniqueId();
-            const colors = generateUniqueColors();
-            const trees = generateUniqueTrees();
-
-            const qrData = {
-                id: uniqueId,
-                colors: colors,
-                trees: trees
-            };
-
-            const qrString = encodeURIComponent(JSON.stringify(qrData));
-            const targetUrl = `https://dormantone.github.io/wisequy/clipboard.html?data=${qrString}`;
-
-            generateQRCode(targetUrl, qrData);
-
-            if (qrCodes.length + 1 >= maxQRCodes) {
-                disableGenerateButton();
-            }
-        });
-
-        function generateUniqueId() {
-            const timestamp = Date.now().toString(36);
-            const randomPart = Math.random().toString(36).substring(2, 8);
-            return `${timestamp}${randomPart}`.toUpperCase();
+        } else {
+            alert("Incorrect password.");
         }
-
-        function generateUniqueColors() {
-            const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "black", "white", 
-                            "gray", "cyan", "magenta", "lime", "maroon", "navy", "olive", "teal", "silver", "gold"];
-
-            const selectedColors = [];
-            while (selectedColors.length < 3) {
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                if (!usedColors.has(color)) {
-                    selectedColors.push(color);
-                    usedColors.add(color);
-                }
-            }
-            return selectedColors;
-        }
-
-        function generateUniqueTrees() {
-            const trees = ["oak", "pine", "maple", "birch", "willow", "cedar", "spruce", "fir", "ash", "elm", 
-                           "cherry", "apple", "peach", "pear", "plum", "walnut", "hickory", "cypress", "juniper", "sycamore"];
-
-            const selectedTrees = [];
-            while (selectedTrees.length < 3) {
-                const tree = trees[Math.floor(Math.random() * trees.length)];
-                if (!usedTrees.has(tree)) {
-                    selectedTrees.push(tree);
-                    usedTrees.add(tree);
-                }
-            }
-            return selectedTrees;
-        }
-
-        function generateQRCode(url, qrData) {
-            const qrCodeContainer = document.createElement("div");
-            qrCodeContainer.classList.add("qr-item");
-
-            const qrCanvas = document.createElement("canvas");
-            qrCodeContainer.appendChild(qrCanvas);
-
-            QRCode.toCanvas(qrCanvas, url, { width: 150, height: 150 }, function (error) {
-                if (error) {
-                    console.error("Error generating QR code:", error);
-                } else {
-                    qrCodes.push({ qrData, qrCanvas, qrCodeContainer });
-                    renderPrintable();
-                }
-            });
-
-            const qrInfoColors = document.createElement("p");
-            qrInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
-            qrCodeContainer.appendChild(qrInfoColors);
-
-            const qrInfoTrees = document.createElement("p");
-            qrInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
-            qrCodeContainer.appendChild(qrInfoTrees);
-
-            const deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "Delete";
-            deleteBtn.addEventListener("click", function() {
-                qrCodes = qrCodes.filter(item => item.qrData.id !== qrData.id);
-                qrCodeContainer.remove();  // Remove from main display area
-                renderPrintable();  // Re-render print area
-                usedColors.delete(...qrData.colors);
-                usedTrees.delete(...qrData.trees);
-                enableGenerateButton();
-            });
-            qrCodeContainer.appendChild(deleteBtn);
-
-            document.getElementById("qrList").appendChild(qrCodeContainer);
-        }
-
-        function renderPrintable() {
-            const printableContainer = document.getElementById("printableContainer");
-            printableContainer.innerHTML = ""; // Clear the existing content
-
-            qrCodes.forEach(({ qrData, qrCanvas }) => {
-                const printItem = document.createElement("div");
-                printItem.classList.add("print-item");
-
-                // Convert canvas to image
-                const image = new Image();
-                image.src = qrCanvas.toDataURL("image/png");
-                image.style.display = "block";
-                image.style.margin = "0 auto";
-                printItem.appendChild(image);
-
-                const printInfoColors = document.createElement("p");
-                printInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
-                printItem.appendChild(printInfoColors);
-
-                const printInfoTrees = document.createElement("p");
-                printInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
-                printItem.appendChild(printInfoTrees);
-
-                printableContainer.appendChild(printItem);
-            });
-        }
-
-        function disableGenerateButton() {
-            const generateBtn = document.getElementById("generateBtn");
-            generateBtn.disabled = true;
-            generateBtn.textContent = "Limit reached (7 QR codes)";
-            document.getElementById("limitMessage").style.display = "block";
-        }
-
-        function enableGenerateButton() {
-            if (qrCodes.length < maxQRCodes) {
-                const generateBtn = document.getElementById("generateBtn");
-                generateBtn.disabled = false;
-                generateBtn.textContent = "Generate QR Code";
-                document.getElementById("limitMessage").style.display = "none";
-            }
-        }
-
-        document.getElementById("printBtn").addEventListener("click", function() {
-            console.log("Print button clicked. Preparing to print...");
-            window.print();
-        });
     </script>
 </body>
 </html>
