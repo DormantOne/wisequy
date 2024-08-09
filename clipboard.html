@@ -4,38 +4,171 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WiseQuy - QR Code Decoder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .note {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>WiseQuy - QR Code Information</h1>
     <div id="qrInfo"></div>
 
-    <script>
-        function getDecodedData() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const qrDataEncoded = urlParams.get('data');
-            if (qrDataEncoded) {
-                try {
-                    const qrData = JSON.parse(decodeURIComponent(qrDataEncoded));
-                    return qrData;
-                } catch (e) {
-                    console.error("Error decoding QR data:", e);
-                    return null;
-                }
-            }
-            return null;
+    <h2>Add Note</h2>
+    <textarea id="noteInput" rows="4" placeholder="Enter your note here..."></textarea>
+    <input type="email" id="emailInput" placeholder="Enter your email" required />
+    <button id="saveNoteBtn">Save Note</button>
+    <p id="saveMessage" style="color: green; display: none;">Note saved successfully!</p>
+
+    <h2>Previous Notes</h2>
+    <div id="notesList"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+    <script type="module">
+        // Function to decrypt the API key using the password
+        function decryptApiKey(encryptedKey, password) {
+            const key = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex).slice(0, 32);
+            const bytes = CryptoJS.AES.decrypt(encryptedKey, key);
+            const decryptedKey = bytes.toString(CryptoJS.enc.Utf8);
+            return decryptedKey;
         }
 
-        const qrData = getDecodedData();
-        const qrInfoDiv = document.getElementById("qrInfo");
+        // Encrypted Firebase API Key
+        const encryptedApiKey = "U2FsdGVkX1/io1prW8SV0Qh0XUWCuYqVsU5ufc+AlWmhF6JNwFIGtDMs2sA1oGAiUREWqioKSSTg39jGFHJOdg=="; // Your encrypted key
 
-        if (qrData) {
-            qrInfoDiv.innerHTML = `
-                <p><strong>ID:</strong> ${qrData.id}</p>
-                <p><strong>Colors:</strong> ${qrData.colors.join(", ")}</p>
-                <p><strong>Trees:</strong> ${qrData.trees.join(", ")}</p>
-            `;
+        // Ask the user for the password to activate Firebase
+        const password = prompt("Enter the password to activate Firebase:");
+
+        if (password === "suncat") {
+            const decryptedApiKey = decryptApiKey(encryptedApiKey, password);
+
+            if (decryptedApiKey) {
+                // Dynamically import Firebase modules after decryption
+                import("https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js").then(({ initializeApp }) => {
+                    import("https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore.js").then(({ getFirestore, collection, addDoc, query, where, orderBy, getDocs }) => {
+                        const firebaseConfig = {
+                            apiKey: decryptedApiKey,
+                            authDomain: "wisequy-35db5.firebaseapp.com",
+                            projectId: "wisequy-35db5",
+                            storageBucket: "wisequy-35db5.appspot.com",
+                            messagingSenderId: "37433532573",
+                            appId: "1:37433532573:web:0b63269d0d4f9728d1f474",
+                            measurementId: "G-8KKCPRFL8B"
+                        };
+
+                        // Initialize Firebase
+                        const app = initializeApp(firebaseConfig);
+                        const db = getFirestore(app);
+
+                        // Fetch QR code data from the URL
+                        function getDecodedData() {
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const qrDataEncoded = urlParams.get('data');
+                            if (qrDataEncoded) {
+                                try {
+                                    const qrData = JSON.parse(decodeURIComponent(qrDataEncoded));
+                                    return qrData;
+                                } catch (e) {
+                                    console.error("Error decoding QR data:", e);
+                                    return null;
+                                }
+                            }
+                            return null;
+                        }
+
+                        const qrData = getDecodedData();
+                        const qrInfoDiv = document.getElementById("qrInfo");
+
+                        if (qrData) {
+                            qrInfoDiv.innerHTML = `
+                                <p><strong>ID:</strong> ${qrData.id}</p>
+                                <p><strong>Colors:</strong> ${qrData.colors.join(", ")}</p>
+                                <p><strong>Trees:</strong> ${qrData.trees.join(", ")}</p>
+                            `;
+                        } else {
+                            qrInfoDiv.innerHTML = "<p>No valid QR code data found.</p>";
+                        }
+
+                        // Function to save notes to Firestore
+                        async function saveNote() {
+                            const note = document.getElementById("noteInput").value;
+                            const email = document.getElementById("emailInput").value;
+                            const timestamp = new Date().toISOString();
+
+                            if (!note || !email) {
+                                alert("Please fill in all fields.");
+                                return;
+                            }
+
+                            try {
+                                await addDoc(collection(db, "notes"), {
+                                    qrId: qrData.id,
+                                    note: note,
+                                    email: email,
+                                    timestamp: timestamp
+                                });
+                                document.getElementById("saveMessage").style.display = "inline"; // Show success message
+                                loadNotes(); // Reload notes after saving
+                            } catch (e) {
+                                console.error("Error saving note:", e);
+                            }
+                        }
+
+                        // Load notes from Firestore, most recent first
+                        async function loadNotes() {
+                            const notesList = document.getElementById("notesList");
+                            notesList.innerHTML = ""; // Clear existing notes
+
+                            const q = query(collection(db, "notes"), where("qrId", "==", qrData.id), orderBy("timestamp", "desc"));
+                            const querySnapshot = await getDocs(q);
+
+                            querySnapshot.forEach((doc) => {
+                                const data = doc.data();
+                                const noteElement = document.createElement("div");
+                                noteElement.classList.add("note");
+                                noteElement.innerHTML = `
+                                    <p><strong>${data.email}:</strong> ${data.note}</p>
+                                    <p><em>${new Date(data.timestamp).toLocaleString()}</em></p>
+                                `;
+                                notesList.appendChild(noteElement);
+                            });
+                        }
+
+                        // Event listener for save button
+                        document.getElementById("saveNoteBtn").addEventListener("click", saveNote);
+
+                        // Load notes on page load
+                        loadNotes();
+
+                        // Persistence for email field
+                        const emailInput = document.getElementById("emailInput");
+                        emailInput.value = localStorage.getItem("userEmail") || "";
+                        emailInput.addEventListener("input", () => {
+                            localStorage.setItem("userEmail", emailInput.value);
+                        });
+                    });
+                });
+            } else {
+                alert("Failed to initialize Firebase. Incorrect decryption.");
+            }
         } else {
-            qrInfoDiv.innerHTML = "<p>No valid QR code data found.</p>";
+            alert("Incorrect password.");
         }
     </script>
 </body>
