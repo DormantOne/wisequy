@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiseQuy - QR Code Decoder</title>
+</head>
+<body>
+    <h1>WiseQuy - QR Code Information</h1>
+    <div id="qrInfo"></div>
+
+    <script>
+        function getDecodedData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const qrDataEncoded = urlParams.get('data');
+            if (qrDataEncoded) {
+                try {
+                    const qrData = JSON.parse(decodeURIComponent(qrDataEncoded));
+                    return qrData;
+                } catch (e) {
+                    console.error("Error decoding QR data:", e);
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        const qrData = getDecodedData();
+        const qrInfoDiv = document.getElementById("qrInfo");
+
+        if (qrData) {
+            qrInfoDiv.innerHTML = `
+                <p><strong>ID:</strong> ${qrData.id}</p>
+                <p><strong>Colors:</strong> ${qrData.colors.join(", ")}</p>
+                <p><strong>Trees:</strong> ${qrData.trees.join(", ")}</p>
+            `;
+        } else {
+            qrInfoDiv.innerHTML = "<p>No valid QR code data found.</p>";
+        }
+    </script>
+</body>
+</html>
