@@ -31,9 +31,9 @@
         }
 
         .printable {
-            display: block !important; /* Force display */
-            visibility: visible !important; /* Force visibility */
-            position: relative !important; /* Ensure it's in the flow */
+            display: block !important;
+            visibility: visible !important;
+            position: relative !important;
             margin-top: 20px;
             page-break-before: always;
         }
@@ -136,9 +136,9 @@
         });
 
         function generateUniqueId() {
-            const timestamp = Date.now().toString(36); // Convert timestamp to base-36
-            const randomPart = Math.random().toString(36).substring(2, 8); // Add randomness
-            return `${timestamp}${randomPart}`.toUpperCase(); // Combine and convert to uppercase
+            const timestamp = Date.now().toString(36);
+            const randomPart = Math.random().toString(36).substring(2, 8);
+            return `${timestamp}${randomPart}`.toUpperCase();
         }
 
         function generateUniqueColors() {
@@ -186,6 +186,7 @@
                 } else {
                     console.log("QR code generated successfully.");
                     addToPrintable(qrData, qrCanvas);
+                    renderPrintable();
                 }
             });
 
@@ -200,12 +201,12 @@
             const deleteBtn = document.createElement("button");
             deleteBtn.textContent = "Delete";
             deleteBtn.addEventListener("click", function() {
-                qrCodeContainer.remove();
                 qrCodes = qrCodes.filter(item => item !== qrData);
                 usedColors.delete(...qrData.colors);
                 usedTrees.delete(...qrData.trees);
                 console.log(`Deleted QR code. ${qrCodes.length} remaining.`);
                 enableGenerateButton();
+                renderPrintable();
             });
             qrCodeContainer.appendChild(deleteBtn);
 
@@ -216,28 +217,37 @@
         }
 
         function addToPrintable(qrData, qrCanvas) {
+            // Store the QR data to be re-rendered later
+            qrCodes.push({ qrData, qrCanvas });
+        }
+
+        function renderPrintable() {
             const printableContainer = document.getElementById("printableContainer");
+            printableContainer.innerHTML = ""; // Clear the existing content
 
-            const printItem = document.createElement("div");
-            printItem.classList.add("print-item");
+            qrCodes.forEach(({ qrData, qrCanvas }) => {
+                const printItem = document.createElement("div");
+                printItem.classList.add("print-item");
 
-            // Convert canvas to image
-            const image = new Image();
-            image.src = qrCanvas.toDataURL("image/png");
-            image.style.display = "block"; // Ensure it's visible
-            image.style.margin = "0 auto"; // Center horizontally
-            printItem.appendChild(image);
+                // Convert canvas to image
+                const image = new Image();
+                image.src = qrCanvas.toDataURL("image/png");
+                image.style.display = "block";
+                image.style.margin = "0 auto";
+                printItem.appendChild(image);
 
-            const printInfoColors = document.createElement("p");
-            printInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
-            printItem.appendChild(printInfoColors);
+                const printInfoColors = document.createElement("p");
+                printInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
+                printItem.appendChild(printInfoColors);
 
-            const printInfoTrees = document.createElement("p");
-            printInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
-            printItem.appendChild(printInfoTrees);
+                const printInfoTrees = document.createElement("p");
+                printInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
+                printItem.appendChild(printInfoTrees);
 
-            printableContainer.appendChild(printItem);
-            console.log(`Added to printable area. Container height: ${printableContainer.scrollHeight}px`);
+                printableContainer.appendChild(printItem);
+            });
+
+            console.log(`Rendered printable area. Container height: ${printableContainer.scrollHeight}px`);
         }
 
         function disableGenerateButton() {
