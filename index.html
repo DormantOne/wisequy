@@ -128,6 +128,7 @@
                     console.error("Error generating QR code:", error);
                 } else {
                     console.log("QR code generated successfully.");
+                    addToPrintable(qrData, qrCanvas);
                 }
             });
 
@@ -152,7 +153,6 @@
             document.getElementById("qrList").appendChild(qrCodeContainer);
 
             qrCodes.push(qrData);
-            addToPrintable(qrData, qrCanvas);
         }
 
         function addToPrintable(qrData, qrCanvas) {
@@ -161,14 +161,10 @@
             const printItem = document.createElement("div");
             printItem.classList.add("print-item");
 
-            const printCanvas = document.createElement("canvas");
-            printCanvas.width = qrCanvas.width;
-            printCanvas.height = qrCanvas.height;
-
-            const printCtx = printCanvas.getContext("2d");
-            printCtx.drawImage(qrCanvas, 0, 0);
-
-            printItem.appendChild(printCanvas);
+            // Convert canvas to image
+            const image = new Image();
+            image.src = qrCanvas.toDataURL("image/png");
+            printItem.appendChild(image);
 
             const printInfoColors = document.createElement("p");
             printInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
@@ -177,12 +173,6 @@
             const printInfoTrees = document.createElement("p");
             printInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
             printItem.appendChild(printInfoTrees);
-
-            if (!printCanvas || !printInfoColors || !printInfoTrees) {
-                console.error("Error: Some print elements were not properly created.");
-            } else {
-                console.log("Print elements added successfully.");
-            }
 
             printableContainer.appendChild(printItem);
             console.log("Added to printable area:", qrData);
