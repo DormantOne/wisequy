@@ -4,14 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WiseQuy - QR Code Generator</title>
+    <style>
+        .qr-item {
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .qr-item canvas {
+            margin-right: 20px;
+        }
+
+        .qr-item p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .qr-list {
+            margin-top: 20px;
+        }
+
+        .printable {
+            display: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .printable, .printable * {
+                visibility: visible;
+            }
+            .printable {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <h1>WiseQuy - QR Code Generator</h1>
     <button id="generateBtn">Generate QR Code</button>
-    <div id="qrCodeContainer"></div>
+    <div class="qr-list" id="qrList"></div>
+    <button id="printBtn">Print All QR Codes</button>
+
+    <div class="printable" id="printableContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
+        let qrCodes = [];
+        const usedColors = new Set();
+        const usedTrees = new Set();
+
         document.getElementById("generateBtn").addEventListener("click", function() {
             const uniqueId = generateUniqueId();
             const colors = generateUniqueColors();
@@ -26,32 +74,95 @@
             const qrString = encodeURIComponent(JSON.stringify(qrData));
             const targetUrl = `https://dormantone.github.io/wisequy/clipboard.html?data=${qrString}`;
 
-            generateQRCode(targetUrl);
+            generateQRCode(targetUrl, qrData);
         });
 
         function generateUniqueId() {
-            return Math.random().toString(36).substring(2, 10);
+            const timestamp = Date.now().toString(36); // Convert timestamp to base-36
+            const randomPart = Math.random().toString(36).substring(2, 8); // Add randomness
+            return `${timestamp}${randomPart}`.toUpperCase(); // Combine and convert to uppercase
         }
 
         function generateUniqueColors() {
-            const colors = ["red", "green", "blue", "yellow", "purple", "orange"];
-            return colors.sort(() => 0.5 - Math.random()).slice(0, 3);
+            const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "black", "white", 
+                            "gray", "cyan", "magenta", "lime", "maroon", "navy", "olive", "teal", "silver", "gold"];
+
+            const selectedColors = [];
+            while (selectedColors.length < 3) {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                if (!usedColors.has(color)) {
+                    selectedColors.push(color);
+                    usedColors.add(color);
+                }
+            }
+            return selectedColors;
         }
 
         function generateUniqueTrees() {
-            const trees = ["oak", "pine", "maple", "birch", "willow", "cedar"];
-            return trees.sort(() => 0.5 - Math.random()).slice(0, 3);
+            const trees = ["oak", "pine", "maple", "birch", "willow", "cedar", "spruce", "fir", "ash", "elm", 
+                           "cherry", "apple", "peach", "pear", "plum", "walnut", "hickory", "cypress", "juniper", "sycamore"];
+
+            const selectedTrees = [];
+            while (selectedTrees.length < 3) {
+                const tree = trees[Math.floor(Math.random() * trees.length)];
+                if (!usedTrees.has(tree)) {
+                    selectedTrees.push(tree);
+                    usedTrees.add(tree);
+                }
+            }
+            return selectedTrees;
         }
 
-        function generateQRCode(url) {
-            const qrCodeContainer = document.getElementById("qrCodeContainer");
-            qrCodeContainer.innerHTML = ""; // Clear previous QR code
+        function generateQRCode(url, qrData) {
+            const qrCodeContainer = document.createElement("div");
+            qrCodeContainer.classList.add("qr-item");
 
-            QRCode.toCanvas(document.createElement("canvas"), url, function (error, canvas) {
-                if (error) console.error(error);
-                qrCodeContainer.appendChild(canvas);
+            const qrCanvas = document.createElement("canvas");
+            qrCodeContainer.appendChild(qrCanvas);
+
+            const qrInfo = document.createElement("p");
+            qrInfo.textContent = `Colors: ${qrData.colors.join(", ")} | Trees: ${qrData.trees.join(", ")}`;
+            qrCodeContainer.appendChild(qrInfo);
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete";
+            deleteBtn.addEventListener("click", function() {
+                qrCodeContainer.remove();
+                qrCodes = qrCodes.filter(item => item !== qrData);
+                usedColors.delete(...qrData.colors);
+                usedTrees.delete(...qrData.trees);
             });
+            qrCodeContainer.appendChild(deleteBtn);
+
+            document.getElementById("qrList").appendChild(qrCodeContainer);
+
+            QRCode.toCanvas(qrCanvas, url, function (error) {
+                if (error) console.error(error);
+            });
+
+            qrCodes.push(qrData);
+            addToPrintable(qrData, qrCanvas);
         }
+
+        function addToPrintable(qrData, qrCanvas) {
+            const printableContainer = document.getElementById("printableContainer");
+
+            const printItem = document.createElement("div");
+            printItem.classList.add("print-item");
+
+            const printCanvas = qrCanvas.cloneNode(true);
+            printItem.appendChild(printCanvas);
+
+            const printInfo = document.createElement("p");
+            printInfo.textContent = `Colors: ${qrData.colors.join(", ")} | Trees: ${qrData.trees.join(", ")}`;
+            printItem.appendChild(printInfo);
+
+            printableContainer.appendChild(printItem);
+        }
+
+        document.getElementById("printBtn").addEventListener("click", function() {
+            window.print();
+        });
     </script>
 </body>
 </html>
