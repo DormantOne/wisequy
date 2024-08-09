@@ -17,7 +17,7 @@
 
         .qr-item canvas {
             margin-bottom: 10px;
-            width: 150px; /* Adjust the size of the QR code */
+            width: 150px;
             height: 150px;
         }
 
@@ -157,8 +157,13 @@
             const printItem = document.createElement("div");
             printItem.classList.add("print-item");
 
-            const printCanvas = qrCanvas.cloneNode(true);
+            const printCanvas = document.createElement("canvas");
+            printCanvas.width = qrCanvas.width;
+            printCanvas.height = qrCanvas.height;
             printItem.appendChild(printCanvas);
+
+            const printCtx = printCanvas.getContext("2d");
+            printCtx.drawImage(qrCanvas, 0, 0);
 
             const printInfoColors = document.createElement("p");
             printInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
