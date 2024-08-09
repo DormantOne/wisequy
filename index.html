@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
     <title>WiseQuy - QR Code Generator</title>
     <style>
         .qr-item {
@@ -31,24 +30,21 @@
         }
 
         .printable {
-            display: block !important;
-            visibility: visible !important;
-            position: relative !important;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
             margin-top: 20px;
-            page-break-before: auto;
         }
 
         .printable .print-item {
             display: inline-block;
             width: 30%;
             text-align: center;
-            margin-bottom: 20px;
+            margin: 5px;
             padding: 10px;
             border: 1px dotted #000;
             box-sizing: border-box;
             vertical-align: top;
-            page-break-inside: avoid;
-            break-inside: avoid;
         }
 
         .printable .print-item img {
@@ -72,17 +68,9 @@
             }
             .printable {
                 position: absolute;
-                left: 0;
                 top: 0;
+                left: 0;
                 width: 100%;
-            }
-
-            .printable .print-item {
-                border-bottom: 1px dotted #000;
-            }
-
-            .printable .print-item:nth-child(3n) {
-                border-right: none;
             }
         }
 
@@ -97,14 +85,14 @@
     <h1>WiseQuy - QR Code Generator</h1>
     <button id="generateBtn">Generate QR Code</button>
     <div class="qr-list" id="qrList"></div>
-    <p id="limitMessage" style="color: red; display: none;">Limit reached: You can generate up to 6 QR codes.</p>
+    <p id="limitMessage" style="color: red; display: none;">Limit reached: You can generate up to 7 QR codes.</p>
     <button id="printBtn">Print All QR Codes</button>
 
     <div class="printable" id="printableContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
-        const maxQRCodes = 6;
+        const maxQRCodes = 7;
         let qrCodes = [];
         const usedColors = new Set();
         const usedTrees = new Set();
@@ -113,8 +101,6 @@
             if (qrCodes.length >= maxQRCodes) {
                 return;
             }
-
-            console.log(`Generating QR code number ${qrCodes.length + 1}`);
 
             const uniqueId = generateUniqueId();
             const colors = generateUniqueColors();
@@ -132,7 +118,6 @@
             generateQRCode(targetUrl, qrData);
 
             if (qrCodes.length + 1 >= maxQRCodes) {
-                console.log("Max QR codes limit reached, disabling generate button.");
                 disableGenerateButton();
             }
         });
@@ -155,7 +140,6 @@
                     usedColors.add(color);
                 }
             }
-            console.log("Selected colors:", selectedColors);
             return selectedColors;
         }
 
@@ -171,7 +155,6 @@
                     usedTrees.add(tree);
                 }
             }
-            console.log("Selected trees:", selectedTrees);
             return selectedTrees;
         }
 
@@ -186,7 +169,6 @@
                 if (error) {
                     console.error("Error generating QR code:", error);
                 } else {
-                    console.log("QR code generated successfully.");
                     qrCodes.push({ qrData, qrCanvas });
                     renderPrintable();
                 }
@@ -206,15 +188,12 @@
                 qrCodes = qrCodes.filter(item => item.qrData.id !== qrData.id);
                 usedColors.delete(...qrData.colors);
                 usedTrees.delete(...qrData.trees);
-                console.log(`Deleted QR code. ${qrCodes.length} remaining.`);
                 enableGenerateButton();
                 renderPrintable();
             });
             qrCodeContainer.appendChild(deleteBtn);
 
             document.getElementById("qrList").appendChild(qrCodeContainer);
-
-            console.log(`QR code ${qrData.id} added. Total: ${qrCodes.length}`);
         }
 
         function renderPrintable() {
@@ -242,14 +221,12 @@
 
                 printableContainer.appendChild(printItem);
             });
-
-            console.log(`Rendered printable area. Container height: ${printableContainer.scrollHeight}px`);
         }
 
         function disableGenerateButton() {
             const generateBtn = document.getElementById("generateBtn");
             generateBtn.disabled = true;
-            generateBtn.textContent = "Limit reached (6 QR codes)";
+            generateBtn.textContent = "Limit reached (7 QR codes)";
             document.getElementById("limitMessage").style.display = "block";
         }
 
