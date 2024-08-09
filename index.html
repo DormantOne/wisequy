@@ -111,6 +111,8 @@
                 return;
             }
 
+            console.log(`Generating QR code number ${qrCodes.length + 1}`);
+
             const uniqueId = generateUniqueId();
             const colors = generateUniqueColors();
             const trees = generateUniqueTrees();
@@ -127,6 +129,7 @@
             generateQRCode(targetUrl, qrData);
 
             if (qrCodes.length + 1 >= maxQRCodes) {
+                console.log("Max QR codes limit reached, disabling generate button.");
                 disableGenerateButton();
             }
         });
@@ -149,6 +152,7 @@
                     usedColors.add(color);
                 }
             }
+            console.log("Selected colors:", selectedColors);
             return selectedColors;
         }
 
@@ -164,6 +168,7 @@
                     usedTrees.add(tree);
                 }
             }
+            console.log("Selected trees:", selectedTrees);
             return selectedTrees;
         }
 
@@ -198,6 +203,7 @@
                 qrCodes = qrCodes.filter(item => item !== qrData);
                 usedColors.delete(...qrData.colors);
                 usedTrees.delete(...qrData.trees);
+                console.log(`Deleted QR code. ${qrCodes.length} remaining.`);
                 enableGenerateButton();
             });
             qrCodeContainer.appendChild(deleteBtn);
@@ -205,6 +211,7 @@
             document.getElementById("qrList").appendChild(qrCodeContainer);
 
             qrCodes.push(qrData);
+            console.log(`QR code ${qrData.id} added. Total: ${qrCodes.length}`);
         }
 
         function addToPrintable(qrData, qrCanvas) {
@@ -229,7 +236,7 @@
             printItem.appendChild(printInfoTrees);
 
             printableContainer.appendChild(printItem);
-            console.log("Added to printable area:", qrData);
+            console.log(`Added to printable area. Container height: ${printableContainer.scrollHeight}px`);
         }
 
         function disableGenerateButton() {
