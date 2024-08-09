@@ -35,7 +35,7 @@
             visibility: visible !important;
             position: relative !important;
             margin-top: 20px;
-            page-break-before: always;
+            page-break-before: auto;
         }
 
         .printable .print-item {
@@ -47,6 +47,8 @@
             border: 1px dotted #000;
             box-sizing: border-box;
             vertical-align: top;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         .printable .print-item img {
