@@ -10,16 +10,19 @@
             border: 1px solid #ccc;
             padding: 10px;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
         .qr-item canvas {
-            margin-right: 20px;
+            margin-bottom: 10px;
+            width: 150px; /* Adjust the size of the QR code */
+            height: 150px;
         }
 
         .qr-item p {
-            margin: 0;
+            margin: 5px 0;
             font-size: 14px;
         }
 
@@ -120,9 +123,17 @@
             const qrCanvas = document.createElement("canvas");
             qrCodeContainer.appendChild(qrCanvas);
 
-            const qrInfo = document.createElement("p");
-            qrInfo.textContent = `Colors: ${qrData.colors.join(", ")} | Trees: ${qrData.trees.join(", ")}`;
-            qrCodeContainer.appendChild(qrInfo);
+            QRCode.toCanvas(qrCanvas, url, { width: 150, height: 150 }, function (error) {
+                if (error) console.error(error);
+            });
+
+            const qrInfoColors = document.createElement("p");
+            qrInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
+            qrCodeContainer.appendChild(qrInfoColors);
+
+            const qrInfoTrees = document.createElement("p");
+            qrInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
+            qrCodeContainer.appendChild(qrInfoTrees);
 
             const deleteBtn = document.createElement("button");
             deleteBtn.textContent = "Delete";
@@ -135,10 +146,6 @@
             qrCodeContainer.appendChild(deleteBtn);
 
             document.getElementById("qrList").appendChild(qrCodeContainer);
-
-            QRCode.toCanvas(qrCanvas, url, function (error) {
-                if (error) console.error(error);
-            });
 
             qrCodes.push(qrData);
             addToPrintable(qrData, qrCanvas);
@@ -153,9 +160,13 @@
             const printCanvas = qrCanvas.cloneNode(true);
             printItem.appendChild(printCanvas);
 
-            const printInfo = document.createElement("p");
-            printInfo.textContent = `Colors: ${qrData.colors.join(", ")} | Trees: ${qrData.trees.join(", ")}`;
-            printItem.appendChild(printInfo);
+            const printInfoColors = document.createElement("p");
+            printInfoColors.textContent = `Colors: ${qrData.colors.join(", ")}`;
+            printItem.appendChild(printInfoColors);
+
+            const printInfoTrees = document.createElement("p");
+            printInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
+            printItem.appendChild(printInfoTrees);
 
             printableContainer.appendChild(printItem);
         }
