@@ -169,7 +169,7 @@
                 if (error) {
                     console.error("Error generating QR code:", error);
                 } else {
-                    qrCodes.push({ qrData, qrCanvas });
+                    qrCodes.push({ qrData, qrCanvas, qrCodeContainer });
                     renderPrintable();
                 }
             });
@@ -186,10 +186,11 @@
             deleteBtn.textContent = "Delete";
             deleteBtn.addEventListener("click", function() {
                 qrCodes = qrCodes.filter(item => item.qrData.id !== qrData.id);
+                qrCodeContainer.remove();  // Remove from main display area
+                renderPrintable();  // Re-render print area
                 usedColors.delete(...qrData.colors);
                 usedTrees.delete(...qrData.trees);
                 enableGenerateButton();
-                renderPrintable();
             });
             qrCodeContainer.appendChild(deleteBtn);
 
