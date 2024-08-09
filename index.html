@@ -17,7 +17,7 @@
 
         .qr-item canvas {
             margin-bottom: 10px;
-            width: 150px; /* Adjust the size of the QR code */
+            width: 150px;
             height: 150px;
         }
 
@@ -31,7 +31,9 @@
         }
 
         .printable {
-            display: none;
+            display: block !important; /* Force display */
+            visibility: visible !important; /* Force visibility */
+            position: relative !important; /* Ensure it's in the flow */
         }
 
         @media print {
@@ -164,6 +166,7 @@
             // Convert canvas to image
             const image = new Image();
             image.src = qrCanvas.toDataURL("image/png");
+            image.style.display = "block"; // Ensure it's visible
             printItem.appendChild(image);
 
             const printInfoColors = document.createElement("p");
@@ -173,6 +176,8 @@
             const printInfoTrees = document.createElement("p");
             printInfoTrees.textContent = `Trees: ${qrData.trees.join(", ")}`;
             printItem.appendChild(printInfoTrees);
+
+            document.body.appendChild(printItem); // Append directly to body for debugging
 
             printableContainer.appendChild(printItem);
             console.log("Added to printable area:", qrData);
