@@ -46,11 +46,19 @@
             padding: 10px;
             border: 1px dotted #000;
             box-sizing: border-box;
+            vertical-align: top;
         }
 
         .printable .print-item img {
             max-width: 100%;
             height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .printable .print-item p {
+            margin: 5px 0;
+            text-align: center;
         }
 
         @media print {
@@ -193,6 +201,7 @@
             const image = new Image();
             image.src = qrCanvas.toDataURL("image/png");
             image.style.display = "block"; // Ensure it's visible
+            image.style.margin = "0 auto"; // Center horizontally
             printItem.appendChild(image);
 
             const printInfoColors = document.createElement("p");
